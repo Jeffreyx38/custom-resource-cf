@@ -1,0 +1,50 @@
+Transform: AWS::Serverless-2016-10-31
+
+Parameters:
+  DomainParameter:
+    Description: apex domain
+    Type: String
+
+Resources:
+  ProxyEntryLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Runtime: nodejs10.x
+      CodeUri: src
+      Handler: index.handler
+
+ProxyEntryRole: #name of block of code
+  Type: AWS::IAM::Role #IAM
+  Properties:
+    Path: /
+    RoleName: stack-proxy-proxyentry-role #Name
+    AssumeRolePolicyDocument: #Trust policies define which entities can assume the role
+      Version: "2012-10-17"
+      Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+              - lambda.amazonaws.com #Lambda has permission
+          Action: sts.AssumeRole
+    #Lambda can do "Policies"
+    #Lambda has access to logs; create and put
+    #Lambda has access to dynamodb; all actions
+    Policies:
+      - PolicyName: stack-proxy-proxyentry-role
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: "Allow"
+              Action:
+                - logs:CreateLogGroup
+                - logs:CreateLogStream
+                - logs:PutLogEvents
+              Resource: arn:aws::logs:*:*:*
+            - Effect: Allow
+              Action:
+                - dynamodb:*
+              Resource:
+                - !Sub arn:aws:${AWS::Region}:${AWS::AccountId}:table/stack-proxy-*
+                - !Sub arn:aws:${AWS::Region}:${AWS::AccountId}:table/stack-proxy-*/index/*
+
+
